@@ -50,6 +50,10 @@ python3 scripts/charm_manager.py [-S stage] -i [ini_file]
 8) change other parameters as you wish
 9) run Charm
 
+###
+The whole genome Hi-C datasets of chromosomal rearrangments can be founded [here](https://genedev.bionet.nsc.ru/ftp/by_Project/Charm/wgHi-C/) 
+
+
 ### The chromosome sizes file
 This file contains chromosome sizes (see https://github.com/aidenlab/juicer/wiki/Pre). The chromosome names and chromosome sizes must be correspondent to the chromosome sizes and chromosome names in .hic-file. 
 File format (see the example "test.chr.sizes")
@@ -109,4 +113,3 @@ Examples:
   hg19 my_complicated3 chr1 3000000 4000000 >> chrNew + 1 -3
   hg19 my_complicated3 chr1 5000000 7500000 >! chrNew + 1 -3
   ```
- 
