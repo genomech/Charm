@@ -504,8 +504,6 @@ def iTotalContactListing( meanHash, binCov, resolution, out, **kwargs):
 	except KeyError: hash=False
 	try: capture = kwargs['capture']
 	except KeyError: capture = False
-	try: user_func = kwargs['user_func']
-	except KeyError: user_func = False
 	if path:
 		files = os.listdir(path)
 		n,lnf = 0,len(files)

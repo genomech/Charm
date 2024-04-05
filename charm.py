@@ -1,7 +1,6 @@
 if __name__ == "__main__":
 	
 	import os
-	import shutil
 	import timeit
 	import argparse
 	from configparser import ConfigParser, ExtendedInterpolation
@@ -44,8 +43,6 @@ if __name__ == "__main__":
 	except KeyError: global_noised = False
 	try: heterozygous = gf.boolean(config['global']['heterozygous'])
 	except KeyError: heterozygous = True
-	try: user_func = gf.boolean(config['global']['path_to_user_functions'])
-	except KeyError: user_func = False
 	try:
 		global_count = gf.boolean(config['global']['contact_count'])
 		if heterozygous: global_count = str(int(global_count)//2)
@@ -93,24 +90,18 @@ if __name__ == "__main__":
 		config['preprocessing']['resolution_pab'] = resolution_pab
 	try: capture = config['preprocessing']['capture']
 	except KeyError: capture = False
-	try: path_to_hic_map = config['preprocessing']['path_to_hic_map']
-	except KeyError: path_to_hic_map = False
+	try: path_to_hic = config['preprocessing']['path_to_hic']
+	except KeyError: path_to_hic = False
 	try: normalization = config['preprocessing']['normalization']
 	except KeyError: normalization = 'NONE'
-	try: path_to_contact_dump = config['preprocessing']['path_to_contact_dump']
-	except KeyError: path_to_contact_dump = False
+	try: path_to_hic_dump = config['preprocessing']['path_to_hic_dump']
+	except KeyError: path_to_hic_dump = False
 	try: path_to_juicertools = config['preprocessing']['path_to_juicertools']
-	except KeyError: 
-		try: path_to_juicertools = config['global']['path_to_juicertools']
-		except KeyError: path_to_juicertools = False
+	except KeyError: path_to_juicertools = config['global']['path_to_juicertools']
 	try: path_to_java_dir = config['preprocessing']['path_to_java_dir']
 	except KeyError:
 		try: path_to_java_dir = config['global']['path_to_java_dir']
 		except KeyError: path_to_java_dir = ''
-	try: user_func = gf.boolean(config['preprocessing']['path_to_user_functions'])
-	except KeyError: 
-		try: user_func = gf.boolean(config['global']['path_to_user_functions'])
-		except KeyError: user_func = False
 	try: log_file = config['preprocessing']['log_file']
 	except KeyError:
 		log_file = config['global']['log_file']
@@ -144,8 +135,8 @@ if __name__ == "__main__":
 		gf.printlog('Stage "pre" - data preprocessing...', log_file)
 		from charm_func import pre
 		name_res, name_low, name_pab = pre.preprocessing(sim_id, chrom_sizes, resolution, resolution_low, resolution_pab,
-			capture, work_dir, path_to_hic_map, normalization, path_to_contact_dump,
-			path_to_java_dir, path_to_juicertools, log_file, cleaning, user_func)
+			capture, work_dir, path_to_hic, normalization, path_to_hic_dump,
+			path_to_java_dir, path_to_juicertools, log_file, cleaning)
 	elp = timeit.default_timer() - start_time
 	gf.printlog('... end of stage "pre" %.2f' % elp, log_file)
 
@@ -263,10 +254,6 @@ if __name__ == "__main__":
 			coverage_pab = config['simulation']['coverage_pab']
 	except KeyError: resolution_pab = config['global']['resolution_pab']
 	
-	try: user_func = gf.boolean(config['simulation']['path_to_user_functions'])
-	except KeyError:
-		try: user_func = gf.boolean(config['global']['path_to_user_functions'])
-		except KeyError: user_func == False
 	
 	if 'sim' in skip_stages and 'lift' in skip_stages: pass
 	else:
@@ -309,7 +296,7 @@ if __name__ == "__main__":
 		map_file = config['simulation']['map_file']
 		pointviews = config['simulation']['pointviews']
 		
-		shutil.rmtree( sim_dir, ignore_errors=True )
+		os.system('rm -r %s' % sim_dir)
 		os.makedirs( sim_dir )
 
 		gf.printlog('Stage "sim" - the simulation of contacts in mutant genome...', log_file)
@@ -391,7 +378,7 @@ if __name__ == "__main__":
 					contactData+contactStatistic, resolution, resolution_low, resolution_pab, MarkPoints1, MarkPointsLow1,
 					l2i_from, l2i_to, (c1,c2), pointviews,
 					model, contact_count, random, predict_null_contacts, noised, add_pairs, MarkPoints2, MarkPointsLow2,
-					sim_id, work_dir, log_file, user_func
+					sim_id, work_dir, log_file
 					)
 				elp = timeit.default_timer() - start_time
 				gf.printlog('\t...end of contact simulation %.2fs'% elp, log_file)
@@ -473,7 +460,7 @@ if __name__ == "__main__":
 		try: log_file = config['liftover']['log_file']
 		except KeyError: log_file = config['global']['log_file']
 
-		shutil.rmtree( sim_dir, ignore_errors=True )
+		os.system('rm -r %s' % sim_dir)
 		os.makedirs( sim_dir )
 		gf.printlog('Stage "lift" - the contact liftovering to the reference genome...', log_file)
 		gf.printlog('\tStep 0: chromosome indexing...',log_file)
@@ -555,7 +542,7 @@ if __name__ == "__main__":
 					contactData+contactStatistic, resolution, resolution_low, resolution_pab, MarkPoints1, MarkPointsLow1,
 					l2i_from, l2i_to, (c1,c2), pointviews,
 					model, contact_count, random, predict_null_contacts, noised, add_pairs, MarkPoints2, MarkPointsLow2,
-					sim_id, work_dir, log_file, user_func
+					sim_id, work_dir, log_file
 					)
 				elp = timeit.default_timer() - start_time
 				gf.printlog('\t...end of contact liftovering %.2fs'% elp, log_file)
@@ -564,7 +551,9 @@ if __name__ == "__main__":
 				gf.printlog('\t...no markpoints, no contact liftovering %.2fs'% elp, log_file)
 		elp = timeit.default_timer() - start_time
 		gf.printlog('... end of stage "lift" %.2f' % elp, log_file)
-		if cleaning: shutil.rmtree( contact_dir, ignore_errors=True )
+		if cleaning:
+			print('cleaning',contact_dir)
+			os.system('rm -r %s' % contact_dir)
 	if 'hic' in skip_stages: pass
 	else:
 		try: config['hic']['svs_contacts']
@@ -723,18 +712,14 @@ if __name__ == "__main__":
 	except KeyError: resolution = config['global']['resolution']
 
 	format = config['hic']['format']
+	hic_resolutions = config['hic']['hic_resolutions'] 
 	
 	try: path_to_java_dir = config['hic']['path_to_java_dir']
 	except KeyError:
 		try: path_to_java_dir = config['global']['path_to_java_dir']
 		except KeyError: path_to_java_dir = ''
 	try: path_to_juicertools = config['hic']['path_to_juicertools']
-	except KeyError: 
-		try: path_to_juicertools = config['global']['path_to_juicertools']
-		except KeyError: path_to_juicertools = False
-	#if path_to_juicertools: 
-	try: hic_resolutions = config['hic']['hic_resolutions']
-	except KeyError: hic_resolutions = False
+	except KeyError: path_to_juicertools = config['global']['path_to_juicertools']
 	try: log_file = config['hic']['log_file']
 	except KeyError: log_file = config['global']['log_file']
 	

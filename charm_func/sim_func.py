@@ -232,11 +232,11 @@ def _randomizing(h, new_counts, old_counts, random):
 	h = h.tolist()
 	return h
 
-def _enumerateContacts(coor_to, contH, covH, meanH, mapH1, mapH2, res, params_ec,**kwargs): #model, pred_null_model, pab_cont, pab_cov, pab_res
+def _enumerateContacts(coor_to, contH, covH, meanH, mapH1, mapH2, res, params_ec,**kwargs): #model, nullc, pab_cont, pab_cov, pab_res
 	try: out = kwargs['out']
 	except KeyError: out = False
 	c1,b1,c2,b2 = coor_to
-	model, noised, pred_null_model, pab_cont, pab_cov, pab_res = params_ec
+	model, noised, nullc, pab_cont, pab_cov, pab_res = params_ec
 	pc,poe,cov1,cov2,real = 0.,0.,0.,0.,0
 	lifted_c = np.array([0.,0.,0.,0.,0.,])
 	if (c1 != c2): modeled_dist = -1000
@@ -254,7 +254,7 @@ def _enumerateContacts(coor_to, contH, covH, meanH, mapH1, mapH2, res, params_ec
 				try: mcov = covH[k1]*covH[k2]
 				except TypeError: mcov = 1
 				cont = 0,0,-1
-				if k1[0] == k2[0] or pred_null_model == False: real = 1
+				if k1[0] == k2[0] or nullc == False: real = 1
 				else: real = 0
 				if (k1[0] != k2[0]): from_dist = -1000
 				else: from_dist = abs(k1[1]-k2[1])
@@ -268,8 +268,8 @@ def _enumerateContacts(coor_to, contH, covH, meanH, mapH1, mapH2, res, params_ec
 						except TypeError: cont = contH[k2+k1][0],contH[k2+k1][1],0,0
 						lifted_c += _recalculateContact(cont, mapH1[c1,b1][k1], mapH2[c2,b2][k2])
 					else: real = 0
-				if real == 0 and mcov > 0 and pred_null_model:
-					cont = _predictContacts(k1+k2, modeled_dist, covH, meanH, res, params_ec[2:], out=out)# pred_null_model, pab_cont, pab_cov, pab_res
+				if real == 0 and mcov > 0 and nullc:
+					cont = _predictContacts(k1+k2, modeled_dist, covH, meanH, res, params_ec[2:], out=out)# nullc, pab_cont, pab_cov, pab_res
 					lifted_c += _recalculateContact(cont, mapH1[c1,b1][k1], mapH2[c2,b2][k2])
 					real == 2
 				else: pass
@@ -295,7 +295,7 @@ def _predictContacts(coor_from, modeled_dist, covH, meanH, res, params_pc,**kwar
 	except KeyError: out = False
 	S,meanCov,meanMCov = covH['all'],covH['mean'],covH['mult_mean']
 	c1,b1,c2,b2 = coor_from
-	pred_null_model, pab_cont, pab_cov, pab_res_list = params_pc
+	nullc, pab_cont, pab_cov, pab_res_list = params_pc
 	cont_AB,oe_AB = 1.,1.
 	if (c1 != c2): from_dist = -1000
 	else: from_dist = abs(b2-b1)
@@ -327,64 +327,67 @@ def _predictContacts(coor_from, modeled_dist, covH, meanH, res, params_pc,**kwar
 		try: cov2 += pab_cov[c2,rb2+1]
 		except KeyError: pass
 	
-	if pred_null_model == 'cov_mult_f':
+	if nullc == 'cov_mult_f':
 		poe = oe_AB*(covH[c1,b1]*covH[c2,b2])/meanMCov
 		pc = poe*score[0]
-	elif pred_null_model == 'cov_sq_f':
+	elif nullc == 'cov_sq_f':
 		poe = oe_AB*np.sqrt((covH[c1,b1]*covH[c2,b2])/meanMCov)
 		pc = poe*score[0]
-	elif pred_null_model == 'cov_mult_noe':
+	elif nullc == 'cov_mult_noe':
 		poe = (covH[c1,b1]*covH[c2,b2])/meanMCov
 		pc = poe*score[0]
-	elif pred_null_model == 'cov_mult_f1':
+	elif nullc == 'cov_mult_f1':
 		poe = oe_AB*(covH[c1,b1]*covH[c2,b2])/score[2]
 		pc = poe*score[0]
-	elif pred_null_model == 'cov_sq_f1':
+	elif nullc == 'cov_sq_f1':
 		poe = oe_AB*np.sqrt((covH[c1,b1]*covH[c2,b2])/score[2])
 		pc = poe*score[0]
-	elif pred_null_model == 'cov_mult_noe1':
+	elif nullc == 'cov_mult_noe1':
 		poe = (covH[c1,b1]*covH[c2,b2])/score[2]
 		pc = poe*score[0]
-	elif pred_null_model == 'cov_sum_f':
+	elif nullc == 'cov_sum_f':
 		poe = oe_AB*(covH[c1,b1]+covH[c2,b2])/(2*meanCov)
 		pc = poe*score[0]
-	elif pred_null_model == 'cov_mixed_f':
+	elif nullc == 'cov_mixed_f':
 		if from_dist == -1000: poe = oe_AB*(covH[c1,b1]*covH[c2,b2])/meanMCov
 		else: poe = oe_AB*(covH[c1,b1]+covH[c2,b2])/(2*meanCov)
 		pc = poe*score[0]
-	elif pred_null_model == 'cov_mixsq_f':
+	elif nullc == 'cov_mixsq_f':
 		if from_dist == -1000: poe = oe_AB*np.sqrt((covH[c1,b1]*covH[c2,b2])/meanMCov)
 		else: poe = oe_AB*(covH[c1,b1]+covH[c2,b2])/(2*meanCov)
 		pc = poe*score[0]
-	elif pred_null_model == 'cov_sum_f1':
+	elif nullc == 'cov_sum_f1':
 		poe = oe_AB*(covH[c1,b1]+covH[c2,b2])/score[3]
 		pc = poe*score[0]
-	elif pred_null_model == 'cov_mixed_f1':
+	elif nullc == 'cov_mixed_f1':
 		if from_dist == -1000: poe = oe_AB*(covH[c1,b1]*covH[c2,b2])/score[2]
 		else: poe = oe_AB*(covH[c1,b1]+covH[c2,b2])/score[3]
 		pc = poe*score[0]
-	elif pred_null_model == 'cov_mixsq_f1':
+	elif nullc == 'cov_mixsq_f1':
 		if from_dist == -1000: poe = oe_AB*np.sqrt((covH[c1,b1]*covH[c2,b2])/score[2])
 		else: poe = oe_AB*(covH[c1,b1]+covH[c2,b2])/score[3]
 		pc = poe*score[0]
-	elif pred_null_model == 'pts_ab': 
-		poe = oe_AB
-		pc = poe*score[0]
-	elif pred_null_model == 'pts':
-		poe = 1.
-		pc = poe*score[0]
+	elif nullc == 'pts_ab': 
+		try: poe = oe_AB
+		except ZeroDivisionError: poe = 0
+		except KeyError: poe = 0
+		try: pc = poe*score[0]
+		except ZeroDivisionError: pc = 0
+		except KeyError: pc = 0
+	elif nullc == 'pts':
+		try: poe = 1.
+		except ZeroDivisionError: poe = 0
+		except KeyError: poe = 0
+		try: pc = poe*score[0]
+		except ZeroDivisionError: pc = 0
+		except KeyError: pc = 0
 	else:
-		print('''!!!The unknown name of predicting null contact model.\nTry use it as the path to user defined functions''')
-		try:
-			with open(pred_null_model,'r') as f: user_file = f.read()
-			exec(user_file)
-			pc,poe = user_func(oe_AB,covH[c1,b1],covH[c2,b2],score)
-		except NameError:
-			print('''!!!The unknown name of predicting null contact model.\nUsing it as the path to user defined functions didn't help.''')
+		print('ERROR: the unknown model name')
+		exit()
 	modelled_cont = pc, poe, covH[c1,b1],covH[c2,b2]
 	return modelled_cont
 
-def _rescaleContacts(high_cl, high_res, contH, covH, meanH, mapH1, mapH2,res, params_rand, params_rc,**kwargs): # params_rC: model, pred_null_model, pab_cont, pab_cov, pab_res
+def _rescaleContacts(high_cl, high_res, contH, covH, meanH, mapH1, mapH2,res, params_rand, params_rc,**kwargs): # params_rC: model, nullc, pab_cont, pab_cov, pab_res
 	try: out = kwargs['out']
 	except KeyError: out = False
 	_cl = []
@@ -450,8 +453,8 @@ def iLiftOverContact(ContactsHash, covHash, ObjCoorMP, resolution, ChrIdxs, out_
 	except KeyError: model = 'easy'
 	try: random = kwargs['random']
 	except KeyError: random = False
-	try: pred_null_model = kwargs['predict_null_contacts']
-	except KeyError: pred_null_model = False
+	try: nullc = kwargs['null_contacts']
+	except KeyError: nullc = False
 	try: noised = kwargs['noised']
 	except KeyError: noised = False
 	try: pointviews = kwargs['pointviews']
@@ -499,14 +502,14 @@ def iLiftOverContact(ContactsHash, covHash, ObjCoorMP, resolution, ChrIdxs, out_
 	elp = timeit.default_timer() - start_time
 	gf.printlog('\t\t\tmodel %s' % model, logname)
 	gf.printlog('\t\t\trandomize %s' % random, logname)
-	gf.printlog('\t\t\tpredict null contact %s' % pred_null_model, logname)
+	gf.printlog('\t\t\tpredict null contact %s' % nullc, logname)
 	if contact_low and low_res: gf.printlog('\t\t\tadditional low reading with rescale %i %i' % (resolution,low_res), logname)
 	else: gf.printlog('\t\t\tno additional low reading', logname)
 	if contact_count != allCon: gf.printlog('\t\t\t%i contacts are regressed to %i, %.4f, %.2f' % (allCon,contact_count, 1.*contact_count/allCon,elp), logname)
 	else: gf.printlog('\t\t\tno contact_count, %.2f' % (elp), logname)
 	out = open(out_name,'w')
 	
-	params_model = model, noised, pred_null_model, pab_cont, pab_cov, pab_res
+	params_model = model, noised, nullc, pab_cont, pab_cov, pab_res
 	params_random = contact_count, allCon, random
 	pKeys = set([])
 	if pointviews: 
@@ -528,11 +531,11 @@ def iLiftOverContact(ContactsHash, covHash, ObjCoorMP, resolution, ChrIdxs, out_
 				if set(LowObjCoorMP[key1].keys()) & set(pointviews): pKeys.add(key1)
 				elif set(LowObjCoorMP2[key2].keys()) & set(pointviews): pKeys.add(key2)
 				else:
-					low_cl.append( _enumerateContacts(key1+key2, contact_low, cov_low, scoring_low, LowObjCoorMP, LowObjCoorMP2, low_res, params_model) )#, out=True ) )#, model, pred_null_model, pab_cont, pab_cov, pab_res) )
+					low_cl.append( _enumerateContacts(key1+key2, contact_low, cov_low, scoring_low, LowObjCoorMP, LowObjCoorMP2, low_res, params_model) )#, out=True ) )#, model, nullc, pab_cont, pab_cov, pab_res) )
 					if num % 2000000 == 0:
 						try: low_cl = _randomizing(low_cl, contact_count, allCon, random)
 						except IndexError: print('IndexError')#pass
-						cl = _rescaleContacts(low_cl, low_res, ContactsHash, covHash, scoring, ObjCoorMP, ObjCoorMP2, resolution, params_random, params_model)#, out=False)#, model, pred_null_model, pab_cont, pab_cov, pab_res, contact_count, random)
+						cl = _rescaleContacts(low_cl, low_res, ContactsHash, covHash, scoring, ObjCoorMP, ObjCoorMP2, resolution, params_random, params_model)#, out=False)#, model, nullc, pab_cont, pab_cov, pab_res, contact_count, random)
 						for c in cl:
 							if (ChrIdxs[c[0]] < ChrIdxs[c[2]]) or ((ChrIdxs[c[0]] == ChrIdxs[c[2]]) and (c[1] < c[3])):
 								out.write('%s %i %s %i %.8f %.8f %2f %.8f %.8f %.2f %.2f %i %.8f %.2f %.2f\n' % (ChrIdxs[c[0]], c[1], ChrIdxs[c[2]], c[3], c[4], c[5], c[6], c[7], c[8], c[9], c[10], c[11], c[12], c[13],c[14]) )
@@ -544,7 +547,7 @@ def iLiftOverContact(ContactsHash, covHash, ObjCoorMP, resolution, ChrIdxs, out_
 		if len(low_cl) != 0:
 			try: low_cl = _randomizing(low_cl, contact_count, allCon, random)
 			except IndexError: print('IndexError')#pass
-			cl = _rescaleContacts(low_cl, low_res, ContactsHash, covHash, scoring, ObjCoorMP, ObjCoorMP2, resolution, params_random, params_model)#, out=True)#, model, pred_null_model, pab_cont, pab_cov, pab_res, contact_count, random)
+			cl = _rescaleContacts(low_cl, low_res, ContactsHash, covHash, scoring, ObjCoorMP, ObjCoorMP2, resolution, params_random, params_model)#, out=True)#, model, nullc, pab_cont, pab_cov, pab_res, contact_count, random)
 			for c in cl:
 				if (ChrIdxs[c[0]] < ChrIdxs[c[2]]) or ((ChrIdxs[c[0]] == ChrIdxs[c[2]]) and (c[1] < c[3])):
 					out.write('%s %i %s %i %.8f %.8f %2f %.8f %.8f %.2f %.2f %i %.8f %.2f %.2f\n' % (ChrIdxs[c[0]], c[1], ChrIdxs[c[2]], c[3], c[4], c[5], c[6], c[7], c[8], c[9], c[10], c[11], c[12], c[13],c[14]) )
@@ -576,12 +579,12 @@ def iLiftOverContact(ContactsHash, covHash, ObjCoorMP, resolution, ChrIdxs, out_
 		else: gf.printlog('\t\t\tModelling without rescaling', logname)
 		cl = []
 		gf.printlog('\t\t\tstart processing %i real and %i potential interaction' % (len(ContactsHash),total), logname)
-		#params_model = model, pred_null_model, contact_low, cov_low, low_res
+		#params_model = model, nullc, contact_low, cov_low, low_res
 		for i in range(blnk):
 			for j in range(i,alnk):
 				num += 1
 				key1,key2 = bKeys[i],aKeys[j]
-				cl.append( _enumerateContacts(key1+key2, ContactsHash, covHash, scoring, ObjCoorMP, ObjCoorMP2, resolution, params_model,out=True) )#, model, pred_null_model, pab_cont, pab_cov, pab_res))
+				cl.append( _enumerateContacts(key1+key2, ContactsHash, covHash, scoring, ObjCoorMP, ObjCoorMP2, resolution, params_model,out=True) )#, model, nullc, pab_cont, pab_cov, pab_res))
 				if num % 2000000 == 0:
 					cl = _randomizing(cl, contact_count, allCon, random)
 					for c in cl:
@@ -609,7 +612,7 @@ def iLiftOverContact(ContactsHash, covHash, ObjCoorMP, resolution, ChrIdxs, out_
 def _listing(coor, contactHash, covH, meanH, res, params_list):
 	
 	c1,b1,c2,b2 = coor
-	noised, pred_null_model, pab_cont, pab_cov, pab_res = params_list
+	noised, nullc, pab_cont, pab_cov, pab_res = params_list
 	pc,poe = 0,0
 	if (c1 != c2): real_dist = -1000
 	else: real_dist = abs(b1-b2)
@@ -620,7 +623,7 @@ def _listing(coor, contactHash, covH, meanH, res, params_list):
 	mcov = covH[c1,b1] * covH[c2,b2]
 	if ((c1,b1,c2,b2) in contactHash) and (contactHash[c1,b1,c2,b2][0] > noise): pc,poe = contactHash[c1,b1,c2,b2]
 	elif ((c2,b2,c1,b1) in contactHash) and (contactHash[c2,b2,c1,b1][0] > noise): pc,poe = contactHash[c2,b2,c1,b1]
-	elif pred_null_model and mcov >0:
+	elif nullc and mcov >0:
 		try: pc,poe,cov1,cov2 = _predictContacts((c1,b1,c2,b2), real_dist, covH, meanH, res, params_list[1:])
 		except KeyError: pass
 	else: pass
@@ -700,14 +703,14 @@ def iContactRegression(covHash,resolution,c1_c2,ChrIdxs,low_ChrSizes,out_name,**
 	except KeyError: random = False
 	try: noised = kwargs['noised']
 	except KeyError: noised = False
-	try: pred_null_model = kwargs['predict_null_contacts']
-	except KeyError: pred_null_model = False
+	try: nullc = kwargs['null_contacts']
+	except KeyError: nullc = False
 	allCon,meanMCov = covHash['all'],covHash['mult_mean']
 	try: contact_count = kwargs['contact_count']
 	except KeyError: contact_count = allCon
 	if contact_count == 0: contact_count = allCon
 	total = 0
-	params_model = noised, pred_null_model, pab_cont, pab_cov, pab_res
+	params_model = noised, nullc, pab_cont, pab_cov, pab_res
 	params_random = contact_count, allCon, random
 	for ci in range(len(c1_c2)):
 		for cj in range((ci+1),len(c1_c2)):
