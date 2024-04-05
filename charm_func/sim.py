@@ -120,7 +120,7 @@ def sv_Simulation(
 	contactData, resolution, resolution_low, resolution_pab, MarkPoints, MarkPointsLow,
 	l2i_from, l2i_to, chosen_chroms_to, pointviews,
 	model, contact_count, random, predict_null_contacts, noised, add_pairs, Untouched, UntouchedLow,
-	sim_name, work_dir, log_file
+	sim_name, work_dir, log_file, user_func
 	):
 	contact_count = int(contact_count)
 	predict_null_contacts = gf.boolean(predict_null_contacts)
@@ -157,7 +157,7 @@ def sv_Simulation(
 		with open(fname,'w') as f: f.write(header)
 	
 	sf.iLiftOverContact(contactHash, covHash, MarkPoints, resolution, l2i_to, fname,pointviews=pviews,
-		model=model, scoring=psList, random=random, contact_count=contact_count, null_contacts=predict_null_contacts,
+		model=model, scoring=psList, random=random, contact_count=contact_count, predict_null_contacts=predict_null_contacts,
 		contact_low=contactLow, coverage_low=covLow, scoring_low=psListLow, markpoints_low=MarkPointsLow, resolution_low=resolution_low,
 		contact_pab=contactPAB, coverage_pab=covPAB, resolution_pab=resolution_pab, noised=noised,
 		untouched=Untouched,untouched_low=UntouchedLow,
@@ -183,6 +183,6 @@ def wt_Simulation(
 		model=model, scoring=psList, random=random, contact_count=contact_count,
 		contact_low=contactLow, coverage_low=covLow, scoring_low=psListLow, resolution_low=resolution_low,
 		contact_pab=contactPAB, coverage_pab=covPAB, resolution_pab=resolution_pab,
-		null_contacts=predict_null_contacts, noised=noised, log=log_file
+		predict_null_contacts=predict_null_contacts, noised=noised, log=log_file
 		)
 	return out_dir

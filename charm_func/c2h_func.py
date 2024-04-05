@@ -19,7 +19,7 @@ def SummingPre(dir_mut,dir_wt1,dir_wt2,resolution,out_name,out_path,**kwargs):
 			F[parse[-3],parse[-2]] = [dir_mut+'/'+file,'',1]
 	if dir_wt1:
 		files = os.listdir(dir_wt1)
-		for file in files: 
+		for file in files:
 			parse = file.split('.')
 			if (parse[-3],parse[-2]) in F: pass
 			else: F[parse[-3],parse[-2]] = [dir_wt1+'/'+file,'',resolution]
@@ -65,7 +65,7 @@ def SummingPre(dir_mut,dir_wt1,dir_wt2,resolution,out_name,out_path,**kwargs):
 		if order: Keys = sorted(H,key=lambda k:(order[k[0]],order[k[2]],k[1],k[3]))
 		else: Keys = sorted(H,key=lambda k:(k[0],k[2],k[1],k[3]))
 		
-		if format in ['short','short.gz']:
+		if format in ['short','short.gz','mcool']:
 			fname='%s/%s/short.%s.%s.%s.pre' % (out_path,out_name,out_name,name[0],name[1])
 			with open(fname,'w') as f:
 				for key in Keys: f.write('%s\t%i\t%s\t%i\t%.8f\n' % (key[0],key[1],key[2],key[3],H[key]))
@@ -78,7 +78,7 @@ def SummingPre(dir_mut,dir_wt1,dir_wt2,resolution,out_name,out_path,**kwargs):
 	if order: files.sort(key=lambda k: (order[k.split('.')[-3]],order[k.split('.')[-2]]))
 	else: files.sort(key=lambda k: k.split('.')[-3:-1])
 	
-	if format in ['short','short.gz']: fname = '%s/%s.short.pre' % (out_path,out_name)
+	if format in ['short','short.gz','mcool']: fname = '%s/short.%s.pre' % (out_path,out_name)
 	else: fname = '%s/%s.pre' % (out_path,out_name)
 	with open(fname,'w') as f:
 		for file in files:

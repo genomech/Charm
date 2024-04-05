@@ -1,5 +1,7 @@
 import os
 import sys
+import gzip
+import shutil
 import timeit
 from charm_func import c2h_func as c2h
 from charm_func import global_func as gf
@@ -19,12 +21,13 @@ def hic_generate(svs_contacts,wt1_contacts,wt2_contacts,
 	
 	out_dir = '%s/out' % work_dir
 	try: os.makedirs( out_dir )
-	except FileExistsError: os.system('rm -r %s/%s' % (out_dir,sim_name))
+	except FileExistsError:  shutil.rmtree( '%s/%s' % (out_dir,sim_name), ignore_errors=True )
 	
 	resolution = int(resolution)
 	path_to_java_dir = gf.boolean(path_to_java_dir)
 	hic_resolutions = gf.boolean(hic_resolutions)
 	l2i = gf.ChromIndexing(chrom_sizes)
+	c2s = gf.ChromSizes(chrom_sizes,1)
 	#if capture: capture = capture[0],int(capture[1]),int(capture[2])
 	chosen_chroms = chosen_chroms.split(',')
 	svs_contacts = gf.boolean(svs_contacts)
@@ -41,8 +44,8 @@ def hic_generate(svs_contacts,wt1_contacts,wt2_contacts,
 	elp = timeit.default_timer() - start_time
 	gf.printlog( '\tpre writing %.2f' % elp, log_file)
 	if cleaning:
-		os.system('rm -r %s' % (svs_contacts))
-		os.system('rm -r %s/%s' % (out_dir,sim_name))
+		shutil.rmtree(svs_contacts, ignore_errors=True)
+		shutil.rmtree('%s/%s' % (out_dir,sim_name), ignore_errors=True)
 
 	if format == 'hic':
 		F = '%s/%s.pre' % ( out_dir, sim_name )
@@ -57,29 +60,53 @@ def hic_generate(svs_contacts,wt1_contacts,wt2_contacts,
 		if control != 0: raise OSError('Java or juicertools absent!')
 		try: os.remove(F + '.gz')
 		except FileNotFoundError: pass
-		os.system('gzip ' + F + '.gz')
+		with open('gzip ' + F , 'rb') as f_in:
+			with gzip.open('gzip ' + F + '.gz', 'wb') as f_out: shutil.copyfileobj(f_in, f_out)
+	elif format == 'mcool':
+		F = '%s/short.%s.pre' % ( out_dir, sim_name )
+		O = '%s/%s.mcool' % ( out_dir, sim_name )
+		from charm_func import cooler_func as cf
+		cf.create_cool_from_contacts( F, O, c2s, resolution, hic_resolutions )
+		with open(F , 'rb') as f_in:
+			with gzip.open(F + '.gz', 'wb') as f_out: shutil.copyfileobj(f_in, f_out)
 	elif format == 'pre': 
 		F = '%s/%s.pre' % ( out_dir, sim_name )
 	elif format == 'pre.gz':
 		F = '%s/%s.pre' % ( out_dir, sim_name )
 		try: os.remove(F + '.gz')
 		except FileNotFoundError: pass
-		os.system('gzip ' + F)
+		with open(F , 'rb') as f_in:
+			with gzip.open(F + '.gz', 'wb') as f_out: shutil.copyfileobj(f_in, f_out)
 	elif format == 'short': 
-		F = '%s/%s.short.pre' % ( out_dir, sim_name )
+		F = '%s/short.%s.pre' % ( out_dir, sim_name )
 	elif format == 'short.gz':
-		F = '%s/%s.short.pre' % ( out_dir, sim_name )
+		F = '%s/short.%s.pre' % ( out_dir, sim_name )
 		try: os.remove(F + '.gz')
 		except FileNotFoundError: pass
-		os.system('gzip ' + F)
+		with open(F , 'rb') as f_in:
+			with gzip.open(F + '.gz', 'wb') as f_out: shutil.copyfileobj(f_in, f_out)
 	else:
-		gl.printlog('Error! Unsupported format, use "hic" or "pre", or "pre.gz" ',log_file)
+		gf.printlog('Error! Unsupported format, use "hic", "mcool", "short", "short.gz", "pre", or "pre.gz" ',log_file)
 		exit()
-	if cleaning and format == 'hic':
-		try: os.remove(F)
-		except FileNotFoundError: pass
-		try: os.remove(F + '.gz')
-		except FileNotFoundError: pass
+	if cleaning:
+		shutil.rmtree('%s/%s' % (out_dir,sim_name), ignore_errors=True)
+		if format == 'hic':
+			try: os.remove(F)
+			except FileNotFoundError: pass
+			try: os.remove(F + '.gz')
+			except FileNotFoundError: pass
+		elif format == 'mcool':
+			try: os.remove(F)
+			except FileNotFoundError: pass
+			try: os.remove('%s.%s.cool' % (O, resolution))
+			except FileNotFoundError: print('%s.%s.cool' % (O, resolution))
+		elif format == 'short.gz':
+			try: os.remove(F)
+			except FileNotFoundError: pass
+		elif format == 'pre.gz':
+			try: os.remove(F)
+			except FileNotFoundError: pass
+		else: pass
 
 	elp = timeit.default_timer() - start_time
 	gf.printlog('\tpath to resulted files: %s' % out_dir, log_file)
